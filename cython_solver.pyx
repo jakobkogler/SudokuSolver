@@ -1,4 +1,7 @@
+# distutils: language=c++
 import cython
+from libcpp.vector cimport vector
+from libcpp.pair cimport pair
 from typing import List, Tuple
 
 
@@ -7,13 +10,23 @@ DigitList = IntList
 Cell = Tuple[int, int]
 
 
-ODD: DigitList = [1, 3, 5, 7, 9]
-EVEN: DigitList = [2, 4, 6, 8]
+cdef vector[int] ODD
+cdef vector[int] EVEN
+cdef int idx
+for idx in range(1, 10, 2):
+    ODD.push_back(idx)
+for idx in range(2, 10, 2):
+    EVEN.push_back(idx)
 
-class Sudoku:
+
+cdef class Sudoku:
+    cdef vector[vector[vector[int]]] pos
+    cdef vector[vector[int]] fixed
+    cdef int rec_cnt
+    cdef vector[pair[pair[cython.int, cython.int], cython.int]] killer_contraints
+
     def __init__(self):
-        self.pos: List[List[DigitList]] = \
-                    [[EVEN, EVEN, EVEN, EVEN, ODD, ODD, ODD, ODD, ODD],
+        self.pos = [[EVEN, EVEN, EVEN, EVEN, ODD, ODD, ODD, ODD, ODD],
                     [ODD, ODD, ODD, EVEN, ODD, ODD, EVEN, EVEN, EVEN],
                     [EVEN, ODD, ODD, EVEN, EVEN, ODD, ODD, ODD, EVEN],
                     [ODD, ODD, EVEN, ODD, EVEN, EVEN, ODD, ODD, EVEN],
@@ -22,69 +35,78 @@ class Sudoku:
                     [ODD, EVEN, EVEN, ODD, ODD, EVEN, ODD, EVEN, ODD],
                     [EVEN, ODD, EVEN, ODD, ODD, ODD, EVEN, ODD, EVEN],
                     [ODD, ODD, ODD, EVEN, EVEN, EVEN, EVEN, ODD, ODD]]
-        self.fixed: List[DigitList] = [[0] * 9 for _ in range(9)]
-        self.rec_cnt: cython.int = 0
+        self.fixed = [[0] * 9 for _ in range(9)]
+        self.rec_cnt = 0
+        self.killer_contraints = [((1, 2), 11),
+                                  ((1,3), 21),
+                                  ((1,4), 17),
+                                  ((2,9), 7),
+                                  ((3,9), 9),
+                                  ((4,9), 22),
+                                  ((9,6), 9),
+                                  ((9,7), 22),
+                                  ((9,8), 9),
+                                  ((6,1), 18),
+                                  ((7,1), 13),
+                                  ((8,1), 15)]
 
-    def check_constraints(self):
+    cdef check_constraints(self):
         possible: bool = True
-        possible &= self.check_little_killer((1,2), 11)
-        possible &= self.check_little_killer((1,3), 21)
-        possible &= self.check_little_killer((1,4), 17)
-        possible &= self.check_little_killer((2,9), 7)
-        possible &= self.check_little_killer((3,9), 9)
-        possible &= self.check_little_killer((4,9), 22)
-        possible &= self.check_little_killer((9,6), 9)
-        possible &= self.check_little_killer((9,7), 22)
-        possible &= self.check_little_killer((9,8), 9)
-        possible &= self.check_little_killer((6,1), 18)
-        possible &= self.check_little_killer((7,1), 13)
-        possible &= self.check_little_killer((8,1), 15)
+        cdef pair[cython.int, cython.int] start
+        cdef cython.int goal
+        for start, goal in self.killer_contraints:
+            possible &= self.check_little_killer(start, goal)
 
         cdef int row_idx, col_idx, row, col
         for row_idx in range(9):
             possible &= self.check_region([self.fixed[row_idx][i] for i in range(9)])
         for col_idx in range(9):
             possible &= self.check_region([self.fixed[i][col_idx] for i in range(9)])
+        cdef vector[int] block_digits
         for row_idx in range(3):
             for col_idx in range(3):
-                digits: DigitList = []
+                block_digits.clear()
                 for row in range(3*row_idx, 3*row_idx+3):
                     for col in range(3*col_idx, 3*col_idx+3):
-                        digits.append(self.fixed[row][col])
-                possible &= self.check_region(digits)
+                        block_digits.push_back(self.fixed[row][col])
+                possible &= self.check_region(block_digits)
         
         return possible
 
-    def check_region(self, digits: DigitList) -> bool:
-        cnts: IntList = [0] * 10
+    cdef bint check_region(self, digits: vector[cython.int]):
+        cnts: vector[cython.int] = [0] * 10
         cdef int digit
         for digit in digits:
             cnts[digit] += 1
-        return max(cnts[1:]) <= 1
+        cnts[0] = 0
+        return max(cnts) <= 1
 
-    def check_little_killer(self, start: Cell, goal: cython.int) -> bool:
-        digits = [self.fixed[x-1][y-1] for (x, y) in self.little_killer(start)]
+    cdef bint check_little_killer(self, start: pair[cython.int, cython.int], goal: cython.int):
+        tmp = self.little_killer(start)
+        digits = [self.fixed[x-1][y-1] for (x, y) in tmp]
         if sum(digits) == goal and 0 not in digits:
             return True
         if sum(digits) < goal and 0 in digits:
             return True
         return False
 
-    def little_killer(self, start):
-        cur: Cell = start
-        direction: Cell
-        if start[0] == 1:
-            direction = (1, -1)
-        if start[0] == 9:
-            direction = (-1, 1)
-        if start[1] == 1:
-            direction = (1, 1)
-        if start[1] == 9:
-            direction = (-1, -1)
+    cdef vector[pair[cython.int, cython.int]] little_killer(self, start: pair[cython.int, cython.int]):
+        cur: pair[cython.int, cython.int] = start
+        cdef pair[cython.int, cython.int] direction
+        if start.first == 1:
+            direction = pair[cython.int, cython.int](1, -1)
+        if start.first == 9:
+            direction = pair[cython.int, cython.int](-1, 1)
+        if start.second == 1:
+            direction = pair[cython.int, cython.int](1, 1)
+        if start.second == 9:
+            direction = pair[cython.int, cython.int](-1, -1)
 
+        cdef vector[pair[cython.int, cython.int]] cells
         while min(cur) > 0 and max(cur) < 10:
-            yield cur
-            cur = (cur[0] + direction[0], cur[1] + direction[1])
+            cells.push_back(cur)
+            cur = pair[cython.int, cython.int](cur.first + direction.first, cur.second + direction.second)
+        return cells
 
     def __repr__(self):
         lines = []
@@ -96,7 +118,10 @@ class Sudoku:
                                        for chunk in chunks(lines, 3)])
         return f"{self.rec_cnt}\n{rep}\n"
 
-    def solve_rec(self, row: cython.int = 0, col: cython.int = 0):
+    def solve(self):
+        self.solve_rec(0, 0)
+
+    cdef solve_rec(self, row: cython.int = 0, col: cython.int = 0):
         self.rec_cnt += 1
         if self.rec_cnt % 10_000 == 0:
             self.show_progress()
@@ -106,13 +131,12 @@ class Sudoku:
             if self.check_constraints():
                 if row == col == 8:
                     print(self)
-                    # exit()
                     continue
                 self.solve_rec(row+(col+1)//9, (col+1)%9)
 
         self.fixed[row][col] = 0
 
-    def show_progress(self):
+    cdef show_progress(self):
         progress = 0.
         full_progress = 1.
         for idx in range(9):
@@ -121,7 +145,7 @@ class Sudoku:
                 break
             max_possibles = len(self.pos[0][idx])
             full_progress /= max_possibles
-            progress += full_progress * self.pos[0][idx].index(digit)
+            progress += full_progress * ((digit-1) // 2)
 
         print(f"Progress: {progress:.2%}")
 

@@ -8,4 +8,5 @@ I'm trying to find all solutions via brute force + backtracking, and compare the
 Time Python:                          878.19s
 Time Cython:                          521.93s
 Time Cython (some additional typing): 417.01s
+Time Cython (some more typing):       373.33s
 ```
