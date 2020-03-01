@@ -9,4 +9,5 @@ Time Python:                          878.19s
 Time Cython:                          521.93s
 Time Cython (some additional typing): 417.01s
 Time Cython (some more typing):       373.33s
+Time C++:                              23.79s
 ```
