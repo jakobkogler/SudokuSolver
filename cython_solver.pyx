@@ -51,9 +51,6 @@ cdef class Sudoku:
                                   ((7, 1), 13),
                                   ((8, 1), 15)]
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
-    @cython.nonecheck(False)
     cdef bint check_constraints(self):
         possible: bint = True
         cdef Cell start
@@ -63,30 +60,32 @@ cdef class Sudoku:
             start, goal = contraint.first, contraint.second
             possible &= self.check_little_killer(start, goal)
 
-        cdef int row_idx, col_idx, row, col
+        cdef int row_idx, col_idx, block_idx
         for row_idx in range(9):
             possible &= self.check_region(self.fixed[row_idx])
-        cdef vector[int] digits
-        digits.reserve(9)
         for col_idx in range(9):
-            digits.clear()
-            for row_idx in range(9):
-                digits.push_back(self.fixed[row_idx][col_idx])
-            possible &= self.check_region(digits)
-        cdef vector[int] block_digits
-        for row_idx in range(3):
-            for col_idx in range(3):
-                block_digits.clear()
-                for row in range(3*row_idx, 3*row_idx+3):
-                    for col in range(3*col_idx, 3*col_idx+3):
-                        block_digits.push_back(self.fixed[row][col])
-                possible &= self.check_region(block_digits)
-        
+            possible &= self.check_region(self.get_col(col_idx))
+        for block_idx in range(9):
+            possible &= self.check_region(self.get_block(block_idx))
+
         return possible
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
-    @cython.nonecheck(False)
+    cdef vector[int] get_col(self, int col_idx):
+        cdef vector[int] digits
+        digits.reserve(9)
+        for row_idx in range(9):
+            digits.push_back(self.fixed[row_idx][col_idx])
+        return digits
+
+    cdef vector[int] get_block(self, int block_idx):
+        cdef int row_idx = block_idx // 3, col_idx = block_idx % 3, row, col
+        cdef vector[int] digits
+        digits.reserve(9)
+        for row in range(3):
+            for col in range(3):
+                digits.push_back(self.fixed[3*row_idx + row][3 * col_idx + col])
+        return digits
+
     cdef bint check_region(self, digits: vector[cython.int]):
         cdef int[10] cnts
         cdef int i
@@ -102,9 +101,6 @@ cdef class Sudoku:
             m = max(m, c)
         return m <= 1
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
-    @cython.nonecheck(False)
     cdef bint check_little_killer(self, Cell start, int goal):
         tmp = self.little_killer(start)
         cdef vector[int] digits
@@ -122,12 +118,8 @@ cdef class Sudoku:
             return True
         return False
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
-    @cython.nonecheck(False)
     cdef vector[Cell] little_killer(self, Cell start):
-        cur: pair[cython.int, cython.int] = start
-        cdef pair[cython.int, cython.int] direction
+        cdef Cell cur = start, direction
         if start.first == 1:
             direction = Cell(1, -1)
         if start.first == 9:
@@ -156,10 +148,7 @@ cdef class Sudoku:
     def solve(self):
         self.solve_rec(0, 0)
 
-    @cython.wraparound(False)
-    @cython.boundscheck(False)
-    @cython.nonecheck(False)
-    cdef solve_rec(self, row: cython.int, col: cython.int):
+    cdef solve_rec(self, int row, int col):
         self.rec_cnt += 1
         if self.rec_cnt % 10_000 == 0:
             self.show_progress()
@@ -191,6 +180,7 @@ cdef class Sudoku:
 def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
