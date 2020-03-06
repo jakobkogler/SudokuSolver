@@ -135,12 +135,9 @@ cdef class Sudoku:
                                        for chunk in chunks(lines, 3)])
         return f"{self.rec_cnt}\n{rep}\n"
 
-    def solve(self):
-        self.solve_rec(0, 0)
-
-    cdef solve_rec(self, int row, int col):
+    cpdef solve_rec(self, int row = 0, int col = 0):
         self.rec_cnt += 1
-        if self.rec_cnt % 10_000 == 0:
+        if row == 0 and col < 4:
             self.show_progress()
         cdef int value
         for value in self.pos[row][col]:

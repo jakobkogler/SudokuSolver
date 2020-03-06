@@ -24,4 +24,4 @@ if __name__ == "__main__":
                    ((7, 1), 13),
                    ((8, 1), 15)]
     sudoku = Sudoku(board, constraints)
-    sudoku.solve()
+    sudoku.solve_rec()

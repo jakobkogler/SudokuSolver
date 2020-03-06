@@ -19,3 +19,4 @@ The program can be exiting early if a constraint is validated.
 | ---------------------------------------- | --------------: | ------: |
 | C++                                      | 17.54s          | 50.06x  |
 | Python                                   | 18.74s          | 46.86x  |
+| Python (fewer progress messages)         | 14.85s          | 59.13x  |
