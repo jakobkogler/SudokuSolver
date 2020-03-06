@@ -8,9 +8,6 @@ ctypedef pair[int, int] Cell
 ctypedef pair[vector[int], int] KillerConstraint
 
 
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.nonecheck(False)
 cdef class Sudoku:
     cdef int[81] pos
     cdef int[81] fixed
