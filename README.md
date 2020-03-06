@@ -1,6 +1,7 @@
 # Sudoku Solver
 
-For [UKPA Hybrid Sudoku Contest](https://ukpuzzles.org/contests.php?contestid=56) problem 6: Little Killer and Even.
+This was programmed for problem 6 (Little Killer and Even) of the [UKPA Hybrid Sudoku Contest](https://ukpuzzles.org/contests.php?contestid=56).
+In order to handle the additional constraints given in this puzzle, this solver is can handle arbitrary many **Even clues** (forcing even numbers in certain cells), and arbitrary many **Little Killer** clues (forcing the sum of digits in certain diagonals).
 
 I'm trying to find all solutions via brute force + backtracking, and compare the speed using normal Python, Cython and C++.
 
@@ -52,3 +53,34 @@ Compile and run the code with:
 g++ -std=c++17 -O3 solver.cpp -march=native -o solver.out
 ./solver.out
 ```
+
+## Usage
+
+```py
+>>> from cython_solver import Sudoku
+>>> board = """.......5.
+...            ..1..93..
+...            9..7.1...
+...            ..5.9.4.7
+...            6...2...3
+...            2.9.4.6..
+...            ...5.2..1
+...            ..48..2..
+...            .1......."""
+>>> sudoku.solve()
+1 solutions found:
+
+467|283|159
+851|469|372
+923|751|864
+--- --- ---
+135|698|427
+648|127|593
+279|345|618
+--- --- ---
+386|572|941
+794|816|235
+512|934|786
+```
+
+An additional example, using additional Even and Little Killer clues, is in the file `cython_main.py`.
