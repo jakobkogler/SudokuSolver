@@ -56,7 +56,7 @@ g++ -std=c++17 -O3 solver.cpp -march=native -o solver.out
 
 ## Usage
 
-```py
+```
 >>> from cython_solver import Sudoku
 >>> board = """.......5.
 ...            ..1..93..
