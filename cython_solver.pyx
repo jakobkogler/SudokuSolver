@@ -12,18 +12,17 @@ ctypedef pair[vector[int], int] KillerConstraint
 @cython.boundscheck(False)
 @cython.nonecheck(False)
 cdef class Sudoku:
-    cdef vector[int] pos
-    cdef vector[int] fixed
-    cdef int rec_cnt
+    cdef int[81] pos
+    cdef int[81] fixed
     cdef vector[KillerConstraint] killer_contraints
     cdef int[9] row_masks
     cdef int[9] col_masks
     cdef int[9] block_masks
+    cdef (vector[int])[81] killer_lookup
 
     def __init__(self, board):
         self.pos = [self.parse_board_char(c) for c in board if self.parse_board_char(c)]
         self.fixed = [0] * 81
-        self.rec_cnt = 0
 
     def parse_board_char(self, c):
         if c in "123456789":  # digit already fixed
@@ -39,6 +38,8 @@ cdef class Sudoku:
     def add_little_killer_constraint(self, Cell start, int goal):
         cells = self.get_diag(start)
         self.killer_contraints.push_back(KillerConstraint(cells, goal))
+        for cell in cells:
+            self.killer_lookup[cell].push_back(self.killer_contraints.size() - 1)
 
     @staticmethod
     cdef inline int cell_idx(int row_idx, int col_idx):
@@ -46,23 +47,27 @@ cdef class Sudoku:
 
     cdef bint check_additional_constraints(self, int row_idx, int col_idx):
         cdef vector[int] cells
-        cdef int goal
-        cdef KillerConstraint contraint
-        for contraint in self.killer_contraints:
-            cells, goal = contraint.first, contraint.second
+        cdef int goal, idx
+        cdef KillerConstraint constraint
+        for idx in self.killer_lookup[Sudoku.cell_idx(row_idx, col_idx)]:
+            constraint = self.killer_contraints[idx]
+            cells, goal = constraint.first, constraint.second
             if not self.check_killer_constraint(cells, goal):
                 return False
         return True
 
     cdef bint check_killer_constraint(self, vector[int] cells, int goal):
-        cdef vector[int] digits
-        digits.reserve(cells.size())
-        cdef int cell_idx
+        cdef int minsum = 0, maxsum = 0
+        cdef int cell_idx, digit
         for cell_idx in cells:
-            digits.push_back(self.fixed[cell_idx])
-
-        cdef int s = int_sum(digits), zeros = count(digits, 0)
-        return s + zeros <= goal and s + zeros * 9 >= goal
+            digit = self.fixed[cell_idx]
+            if digit:
+                minsum += digit
+                maxsum += digit
+            else:
+                minsum += 1
+                maxsum += 9
+        return minsum <= goal and maxsum >= goal
 
     def get_diag(self, Cell start):
         cdef Cell cur = start, direction
@@ -89,12 +94,9 @@ cdef class Sudoku:
             lines.append('|'.join(line))
         rep =  '\n--- --- ---\n'.join(['\n'.join(chunk)
                                        for chunk in chunks(lines, 3)])
-        return f"{self.rec_cnt}\n{rep}\n"
+        return rep
 
     cpdef solve_rec(self, int row = 0, int col = 0):
-        self.rec_cnt += 1
-        if row == 0 and col == 3:
-            self.show_progress()
         cdef int block = (row // 3) * 3 + (col // 3)
         cdef int row_mask = self.row_masks[row]
         cdef int col_mask = self.col_masks[col]
@@ -118,42 +120,7 @@ cdef class Sudoku:
         self.col_masks[col] = col_mask
         self.block_masks[block] = block_mask
 
-    cdef show_progress(self):
-        progress = 0.
-        full_progress = 1.
-        for idx in range(9):
-            digit = self.fixed[idx]
-            if digit == 0:
-                break
-            mask = self.pos[idx]
-            max_possibles = sum('1' == c for c in bin(mask))
-            full_progress /= max_possibles
-            progress += full_progress * ((digit-1) // 2)
-
-        print(f"Progress: {progress:.2%}")
-
 
 def chunks(lst, n):
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.nonecheck(False)
-cdef inline int count(vector[int] v, int x):
-    cdef int e, c = 0
-    for e in v:
-        if x == e:
-            c += 1
-    return c
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.nonecheck(False)
-cdef inline int int_sum(vector[int] v):
-    cdef int s = 0, e
-    for e in v:
-        s += e
-    return s
