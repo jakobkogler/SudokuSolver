@@ -18,5 +18,7 @@ The program can be exiting early if a constraint is validated.
 | Description                              | Time            | Speedup |
 | ---------------------------------------- | --------------: | ------: |
 | C++                                      | 17.54s          | 50.06x  |
-| Python                                   | 18.74s          | 46.86x  |
-| Python (fewer progress messages)         | 14.85s          | 59.13x  |
+| Cython                                   | 18.74s          | 46.86x  |
+| Cython (fewer progress messages)         | 14.85s          | 59.13x  |
+| Cython (more efficient checking)         | 3.45s           | 254.54x |
+| Cython (mask for everything)             | 2.50s           | 351.27x |

@@ -8,23 +8,21 @@ ctypedef pair[int, int] Cell
 ctypedef pair[vector[int], int] LittleKillerConstraint
 
 
-cdef vector[int] ODD
-cdef vector[int] EVEN
-cdef int idx
-for idx in range(1, 10, 2):
-    ODD.push_back(idx)
-for idx in range(2, 10, 2):
-    EVEN.push_back(idx)
+cdef int ODD = 0b1010101010
+cdef int EVEN = 0b101010100
 
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.nonecheck(False)
 cdef class Sudoku:
-    cdef vector[vector[int]] pos
+    cdef vector[int] pos
     cdef vector[int] fixed
     cdef int rec_cnt
     cdef vector[LittleKillerConstraint] killer_contraints
+    cdef int[9] row_masks
+    cdef int[9] col_masks
+    cdef int[9] block_masks
 
     def __init__(self, odd_even_description, little_killer_constraints):
         self.pos = [(EVEN, ODD)[int(c)] for c in odd_even_description if c in "01"]
@@ -42,16 +40,7 @@ cdef class Sudoku:
     cdef inline int cell_idx(int row_idx, int col_idx):
         return row_idx * 9 + col_idx
 
-    cdef bint check_constraints(self, int row_idx, int col_idx):
-        if not self.check_region(self.get_row(row_idx)):
-            return False
-        if not self.check_region(self.get_col(col_idx)):
-            return False
-        cdef int block_idx = (row_idx // 3) * 3 + (col_idx // 3)
-        if not self.check_region(self.get_block(block_idx)):
-            return False
-
-        possible: bint = True
+    cdef bint check_additional_constraints(self, int row_idx, int col_idx):
         cdef vector[int] cells
         cdef int goal
         cdef LittleKillerConstraint contraint
@@ -59,8 +48,7 @@ cdef class Sudoku:
             cells, goal = contraint.first, contraint.second
             if not self.check_little_killer(cells, goal):
                 return False
-
-        return possible
+        return True
 
     cdef vector[int] get_row(self, int row_idx):
         cdef vector[int] digits
@@ -147,16 +135,28 @@ cdef class Sudoku:
         self.rec_cnt += 1
         if row == 0 and col == 3:
             self.show_progress()
+        cdef int block = (row // 3) * 3 + (col // 3)
+        cdef int row_mask = self.row_masks[row]
+        cdef int col_mask = self.col_masks[col]
+        cdef int block_mask = self.block_masks[block]
+        cdef int possible_mask = self.pos[Sudoku.cell_idx(row, col)] & ~row_mask & ~col_mask & ~block_mask
         cdef int value
-        for value in self.pos[Sudoku.cell_idx(row, col)]:
-            self.fixed[Sudoku.cell_idx(row, col)] = value
-            if self.check_constraints(row, col):
-                if row == col == 8:
-                    print(self)
-                    continue
-                self.solve_rec(row+(col+1)//9, (col+1)%9)
+        for value in range(1, 10):
+            if (1 << value) & possible_mask:
+                self.fixed[Sudoku.cell_idx(row, col)] = value
+                if self.check_additional_constraints(row, col):
+                    if row == col == 8:
+                        print(self)
+                        continue
+                    self.row_masks[row] = row_mask | (1 << value)
+                    self.col_masks[col] = col_mask | (1 << value)
+                    self.block_masks[block] = block_mask | (1 << value)
+                    self.solve_rec(row+(col+1)//9, (col+1)%9)
 
         self.fixed[Sudoku.cell_idx(row, col)] = 0
+        self.row_masks[row] = row_mask
+        self.col_masks[col] = col_mask
+        self.block_masks[block] = block_mask
 
     cdef show_progress(self):
         progress = 0.
@@ -165,7 +165,8 @@ cdef class Sudoku:
             digit = self.fixed[idx]
             if digit == 0:
                 break
-            max_possibles = len(self.pos[idx])
+            mask = self.pos[idx]
+            max_possibles = sum('1' == c for c in bin(mask))
             full_progress /= max_possibles
             progress += full_progress * ((digit-1) // 2)
 
