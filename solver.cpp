@@ -38,18 +38,20 @@ public:
     }
 
     bool check_constraints() {
-        bool possible = true;
         for (auto const& [start, goal] : killer_contraints)
-            possible &= check_little_killer(start, goal);
+            if (!check_little_killer(start, goal))
+                return false;
 
         for (int row_idx = 0; row_idx < 9; row_idx++)
-            possible &= check_region(fixed[row_idx]);
+            if (!check_region(fixed[row_idx]))
+                return false;
 
         for (int col_idx = 0; col_idx < 9; col_idx++) {
             vector<int> col(9);
             for (int row_idx = 0; row_idx < 9; row_idx++)
                 col[row_idx] = fixed[row_idx][col_idx];
-            possible &= check_region(col);
+            if (!check_region(col))
+                return false;
         }
         for (int row_idx = 0; row_idx < 3; row_idx++) {
             for (int col_idx = 0; col_idx < 3; col_idx++) {
@@ -60,10 +62,11 @@ public:
                         digits.push_back(fixed[row][col]);
                     }
                 }
-                possible &= check_region(digits);
+                if (!check_region(digits))
+                    return false;
             }
         }
-        return possible;
+        return true;
     }
     
     bool check_region(vector<int> const& digits) {

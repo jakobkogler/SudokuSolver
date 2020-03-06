@@ -58,15 +58,19 @@ cdef class Sudoku:
         cdef LittleKillerConstraint contraint
         for contraint in self.killer_contraints:
             start, goal = contraint.first, contraint.second
-            possible &= self.check_little_killer(start, goal)
+            if not self.check_little_killer(start, goal):
+                return False
 
         cdef int row_idx, col_idx, block_idx
         for row_idx in range(9):
-            possible &= self.check_region(self.fixed[row_idx])
+            if not self.check_region(self.fixed[row_idx]):
+                return False
         for col_idx in range(9):
-            possible &= self.check_region(self.get_col(col_idx))
+            if not self.check_region(self.get_col(col_idx)):
+                return False
         for block_idx in range(9):
-            possible &= self.check_region(self.get_block(block_idx))
+            if not self.check_region(self.get_block(block_idx)):
+                return False
 
         return possible
 

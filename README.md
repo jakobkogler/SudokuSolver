@@ -12,3 +12,10 @@ I'm trying to find all solutions via brute force + backtracking, and compare the
 | Cython (even more typing)                | 373.33s         | 2.35x   |
 | C++                                      | 23.79s          | 36.91x  |
 | Cython (fix all unnecessary conversions) | 26.36s          | 33.32x  |
+
+The program can be exiting early if a constraint is validated.
+
+| Description                              | Time            | Speedup |
+| ---------------------------------------- | --------------: | ------: |
+| C++                                      | 17.54s          | 50.06x  |
+| Python                                   | 18.74s          | 46.86x  |
