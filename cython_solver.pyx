@@ -5,11 +5,7 @@ from libcpp.vector cimport vector
 from libcpp.utility cimport pair
 
 ctypedef pair[int, int] Cell
-ctypedef pair[vector[int], int] LittleKillerConstraint
-
-
-cdef int ODD = 0b1010101010
-cdef int EVEN = 0b101010100
+ctypedef pair[vector[int], int] KillerConstraint
 
 
 @cython.wraparound(False)
@@ -19,22 +15,30 @@ cdef class Sudoku:
     cdef vector[int] pos
     cdef vector[int] fixed
     cdef int rec_cnt
-    cdef vector[LittleKillerConstraint] killer_contraints
+    cdef vector[KillerConstraint] killer_contraints
     cdef int[9] row_masks
     cdef int[9] col_masks
     cdef int[9] block_masks
 
-    def __init__(self, odd_even_description, little_killer_constraints):
-        self.pos = [(EVEN, ODD)[int(c)] for c in odd_even_description if c in "01"]
+    def __init__(self, board):
+        self.pos = [self.parse_board_char(c) for c in board if self.parse_board_char(c)]
         self.fixed = [0] * 81
         self.rec_cnt = 0
 
-        for start, goal in little_killer_constraints:
-            self.add_little_killer_constraint(start, goal)
+    def parse_board_char(self, c):
+        if c in "123456789":  # digit already fixed
+            return 1 << int(c)
+        if c in "0.":  # empty cell
+            return (1 << 10) - 1
+        if c == "O":  # ODD
+            return 0b1010101010
+        if c == "E":  # EVEN
+            return 0b101010100
+        return 0
 
     def add_little_killer_constraint(self, Cell start, int goal):
         cells = self.get_diag(start)
-        self.killer_contraints.push_back(LittleKillerConstraint(cells, goal))
+        self.killer_contraints.push_back(KillerConstraint(cells, goal))
 
     @staticmethod
     cdef inline int cell_idx(int row_idx, int col_idx):
@@ -43,66 +47,22 @@ cdef class Sudoku:
     cdef bint check_additional_constraints(self, int row_idx, int col_idx):
         cdef vector[int] cells
         cdef int goal
-        cdef LittleKillerConstraint contraint
+        cdef KillerConstraint contraint
         for contraint in self.killer_contraints:
             cells, goal = contraint.first, contraint.second
-            if not self.check_little_killer(cells, goal):
+            if not self.check_killer_constraint(cells, goal):
                 return False
         return True
 
-    cdef vector[int] get_row(self, int row_idx):
-        cdef vector[int] digits
-        digits.reserve(9)
-        for col_idx in range(9):
-            digits.push_back(self.fixed[Sudoku.cell_idx(row_idx, col_idx)])
-        return digits
-
-    cdef vector[int] get_col(self, int col_idx):
-        cdef vector[int] digits
-        digits.reserve(9)
-        for row_idx in range(9):
-            digits.push_back(self.fixed[Sudoku.cell_idx(row_idx, col_idx)])
-        return digits
-
-    cdef vector[int] get_block(self, int block_idx):
-        cdef int row_idx = block_idx // 3, col_idx = block_idx % 3, row, col
-        cdef vector[int] digits
-        digits.reserve(9)
-        for row in range(3):
-            for col in range(3):
-                digits.push_back(self.fixed[Sudoku.cell_idx(3*row_idx + row, 3 * col_idx + col)])
-        return digits
-
-    cdef bint check_region(self, digits: vector[cython.int]):
-        cdef int[10] cnts
-        cdef int i
-        for i in range(10):
-            cnts[i] = 0
-        cdef int digit
-        for digit in digits:
-            cnts[digit] += 1
-        cnts[0] = 0
-
-        cdef int m = 0, c
-        for c in cnts:
-            m = max(m, c)
-        return m <= 1
-
-    cdef bint check_little_killer(self, vector[int] cells, int goal):
+    cdef bint check_killer_constraint(self, vector[int] cells, int goal):
         cdef vector[int] digits
         digits.reserve(cells.size())
         cdef int cell_idx
         for cell_idx in cells:
             digits.push_back(self.fixed[cell_idx])
 
-        cdef int s = 0, i
-        for i in digits:
-            s += i
-        if s == goal and count(digits, 0) == 0:
-            return True
-        if s < goal and count(digits, 0) > 0:
-            return True
-        return False
+        cdef int s = int_sum(digits), zeros = count(digits, 0)
+        return s + zeros <= goal and s + zeros * 9 >= goal
 
     def get_diag(self, Cell start):
         cdef Cell cur = start, direction
@@ -181,9 +141,19 @@ def chunks(lst, n):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.nonecheck(False)
-cdef int count(vector[int] v, int x):
+cdef inline int count(vector[int] v, int x):
     cdef int e, c = 0
     for e in v:
         if x == e:
             c += 1
     return c
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.nonecheck(False)
+cdef inline int int_sum(vector[int] v):
+    cdef int s = 0, e
+    for e in v:
+        s += e
+    return s
