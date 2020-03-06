@@ -5,7 +5,7 @@ from libcpp.vector cimport vector
 from libcpp.utility cimport pair
 
 ctypedef pair[int, int] Cell
-ctypedef pair[Cell, int] LittleKillerConstraint
+ctypedef pair[vector[Cell], int] LittleKillerConstraint
 
 
 cdef vector[int] ODD
@@ -26,39 +26,26 @@ cdef class Sudoku:
     cdef int rec_cnt
     cdef vector[LittleKillerConstraint] killer_contraints
 
-    def __init__(self):
-        self.pos = [[EVEN, EVEN, EVEN, EVEN, ODD, ODD, ODD, ODD, ODD],
-                    [ODD, ODD, ODD, EVEN, ODD, ODD, EVEN, EVEN, EVEN],
-                    [EVEN, ODD, ODD, EVEN, EVEN, ODD, ODD, ODD, EVEN],
-                    [ODD, ODD, EVEN, ODD, EVEN, EVEN, ODD, ODD, EVEN],
-                    [ODD, EVEN, ODD, ODD, EVEN, EVEN, ODD, EVEN, ODD],
-                    [EVEN, EVEN, ODD, ODD, ODD, ODD, EVEN, EVEN, ODD],
-                    [ODD, EVEN, EVEN, ODD, ODD, EVEN, ODD, EVEN, ODD],
-                    [EVEN, ODD, EVEN, ODD, ODD, ODD, EVEN, ODD, EVEN],
-                    [ODD, ODD, ODD, EVEN, EVEN, EVEN, EVEN, ODD, ODD]]
+    def __init__(self, odd_even_description, little_killer_constraints):
+        self.pos = [[(EVEN, ODD)[int(c)] for c in row] for row in odd_even_description.split()]
         self.fixed = [[0] * 9 for _ in range(9)]
         self.rec_cnt = 0
-        self.killer_contraints = [((1, 2), 11),
-                                  ((1, 3), 21),
-                                  ((1, 4), 17),
-                                  ((2, 9), 7),
-                                  ((3, 9), 9),
-                                  ((4, 9), 22),
-                                  ((9, 6), 9),
-                                  ((9, 7), 22),
-                                  ((9, 8), 9),
-                                  ((6, 1), 18),
-                                  ((7, 1), 13),
-                                  ((8, 1), 15)]
+
+        for start, goal in little_killer_constraints:
+            self.add_little_killer_constraint(start, goal)
+
+    def add_little_killer_constraint(self, Cell start, int goal):
+        cells = self.little_killer(start)
+        self.killer_contraints.push_back(LittleKillerConstraint(cells, goal))
 
     cdef bint check_constraints(self):
         possible: bint = True
-        cdef Cell start
+        cdef vector[Cell] cells
         cdef int goal
         cdef LittleKillerConstraint contraint
         for contraint in self.killer_contraints:
-            start, goal = contraint.first, contraint.second
-            if not self.check_little_killer(start, goal):
+            cells, goal = contraint.first, contraint.second
+            if not self.check_little_killer(cells, goal):
                 return False
 
         cdef int row_idx, col_idx, block_idx
@@ -105,12 +92,11 @@ cdef class Sudoku:
             m = max(m, c)
         return m <= 1
 
-    cdef bint check_little_killer(self, Cell start, int goal):
-        tmp = self.little_killer(start)
+    cdef bint check_little_killer(self, vector[Cell] cells, int goal):
         cdef vector[int] digits
-        digits.reserve(tmp.size())
+        digits.reserve(cells.size())
         cdef Cell xy
-        for xy in tmp:
+        for xy in cells:
             digits.push_back(self.fixed[xy.first-1][xy.second-1])
 
         cdef int s = 0, i
