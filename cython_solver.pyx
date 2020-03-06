@@ -86,6 +86,14 @@ cdef class Sudoku:
         return cells
 
     cdef solve_rec(self, int row, int col):
+        if row == 9:  # solved
+            self.solutions.append(list(self.fixed))
+            return
+
+        if self.fixed[Sudoku.cell_idx(row, col)]:
+            self.solve_rec(row+(col+1)//9, (col+1)%9)
+            return
+
         cdef int block = (row // 3) * 3 + (col // 3)
         cdef int row_mask = self.row_masks[row]
         cdef int col_mask = self.col_masks[col]
@@ -96,9 +104,6 @@ cdef class Sudoku:
             if (1 << value) & possible_mask:
                 self.fixed[Sudoku.cell_idx(row, col)] = value
                 if self.check_additional_constraints(row, col):
-                    if row == col == 8:
-                        self.solutions.append(list(self.fixed))
-                        continue
                     self.row_masks[row] = row_mask | (1 << value)
                     self.col_masks[col] = col_mask | (1 << value)
                     self.block_masks[block] = block_mask | (1 << value)
@@ -111,6 +116,19 @@ cdef class Sudoku:
 
     def solve(self):
         self.solutions = []
+
+        # first do prefill some constraints
+        for cell_idx, possible_mask in enumerate(self.pos):
+            for digit in range(1, 10):
+                if possible_mask == 1 << digit:  # digit already fixed
+                    row, col = cell_idx // 9, cell_idx % 9
+                    block = (row // 3) * 3 + (col // 3)
+                    self.fixed[Sudoku.cell_idx(row, col)] = digit
+                    self.row_masks[row] |= 1 << digit
+                    self.col_masks[col] |= 1 << digit
+                    self.block_masks[block] |= 1 << digit
+
+        # then only solve
         self.solve_rec(0, 0)
         print(f"{len(self.solutions)} solutions found:")
         for solution in self.solutions:
