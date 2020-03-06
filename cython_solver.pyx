@@ -19,10 +19,12 @@ cdef class Sudoku:
     cdef int[9] col_masks
     cdef int[9] block_masks
     cdef (vector[int])[81] killer_lookup
+    cdef object solutions
 
     def __init__(self, board):
         self.pos = [self.parse_board_char(c) for c in board if self.parse_board_char(c)]
         self.fixed = [0] * 81
+        self.solutions = []
 
     def parse_board_char(self, c):
         if c in "123456789":  # digit already fixed
@@ -86,17 +88,7 @@ cdef class Sudoku:
             cur = Cell(cur.first + direction.first, cur.second + direction.second)
         return cells
 
-    def __repr__(self):
-        lines = []
-        for row in chunks(self.fixed, 9):
-            line = [''.join('.123456789'[x] for x in chunk)
-                    for chunk in chunks(row, 3)]
-            lines.append('|'.join(line))
-        rep =  '\n--- --- ---\n'.join(['\n'.join(chunk)
-                                       for chunk in chunks(lines, 3)])
-        return rep
-
-    cpdef solve_rec(self, int row = 0, int col = 0):
+    cdef solve_rec(self, int row, int col):
         cdef int block = (row // 3) * 3 + (col // 3)
         cdef int row_mask = self.row_masks[row]
         cdef int col_mask = self.col_masks[col]
@@ -108,7 +100,7 @@ cdef class Sudoku:
                 self.fixed[Sudoku.cell_idx(row, col)] = value
                 if self.check_additional_constraints(row, col):
                     if row == col == 8:
-                        print(self)
+                        self.solutions.append(list(self.fixed))
                         continue
                     self.row_masks[row] = row_mask | (1 << value)
                     self.col_masks[col] = col_mask | (1 << value)
@@ -119,6 +111,24 @@ cdef class Sudoku:
         self.row_masks[row] = row_mask
         self.col_masks[col] = col_mask
         self.block_masks[block] = block_mask
+
+    def solve(self):
+        self.solutions = []
+        self.solve_rec(0, 0)
+        print(f"{len(self.solutions)} solutions found:")
+        for solution in self.solutions:
+            print()
+            print(self.format_board(solution))
+
+    def format_board(self, board):
+        lines = []
+        for row in chunks(board, 9):
+            line = [''.join('.123456789'[x] for x in chunk)
+                    for chunk in chunks(row, 3)]
+            lines.append('|'.join(line))
+        rep =  '\n--- --- ---\n'.join(['\n'.join(chunk)
+                                       for chunk in chunks(lines, 3)])
+        return rep
 
 
 def chunks(lst, n):

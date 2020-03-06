@@ -29,4 +29,4 @@ if __name__ == "__main__":
     sudoku = Sudoku(board)
     for start, goal in constraints:
         sudoku.add_little_killer_constraint(start, goal)
-    sudoku.solve_rec()
+    sudoku.solve()
