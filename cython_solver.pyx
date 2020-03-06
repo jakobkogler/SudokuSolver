@@ -42,7 +42,15 @@ cdef class Sudoku:
     cdef inline int cell_idx(int row_idx, int col_idx):
         return row_idx * 9 + col_idx
 
-    cdef bint check_constraints(self):
+    cdef bint check_constraints(self, int row_idx, int col_idx):
+        if not self.check_region(self.get_row(row_idx)):
+            return False
+        if not self.check_region(self.get_col(col_idx)):
+            return False
+        cdef int block_idx = (row_idx // 3) * 3 + (col_idx // 3)
+        if not self.check_region(self.get_block(block_idx)):
+            return False
+
         possible: bint = True
         cdef vector[int] cells
         cdef int goal
@@ -50,17 +58,6 @@ cdef class Sudoku:
         for contraint in self.killer_contraints:
             cells, goal = contraint.first, contraint.second
             if not self.check_little_killer(cells, goal):
-                return False
-
-        cdef int row_idx, col_idx, block_idx
-        for row_idx in range(9):
-            if not self.check_region(self.get_row(row_idx)):
-                return False
-        for col_idx in range(9):
-            if not self.check_region(self.get_col(col_idx)):
-                return False
-        for block_idx in range(9):
-            if not self.check_region(self.get_block(block_idx)):
                 return False
 
         return possible
@@ -153,7 +150,7 @@ cdef class Sudoku:
         cdef int value
         for value in self.pos[Sudoku.cell_idx(row, col)]:
             self.fixed[Sudoku.cell_idx(row, col)] = value
-            if self.check_constraints():
+            if self.check_constraints(row, col):
                 if row == col == 8:
                     print(self)
                     continue
