@@ -7,21 +7,22 @@ I'm trying to find all solutions via brute force + backtracking, and compare the
 
 Here are the timing results for different versions of the program. See the Git history for the different source codes.
 
-| Description                                | Time            | Speedup  |
-| ------------------------------------------ | --------------: | -------: |
-| Python                                     | 878.19s         | 1.00x    |
-| Cython                                     | 521.93s         | 1.68x    |
-| Cython (more typing)                       | 417.01s         | 2.10x    |
-| Cython (even more typing)                  | 373.33s         | 2.35x    |
-| C++ (straightforward translation)          | 23.79s          | 36.91x   |
-| Cython (fix all unnecessary conversions)   | 26.36s          | 33.32x   |
-| C++ (exit early from constraints check)    | 17.54s          | 50.06x   |
-| Cython (exit early from constraints check) | 18.74s          | 46.86x   |
-| Cython (fewer progress messages)           | 14.85s          | 59.13x   |
-| Cython (more efficient checking)           | 3.45s           | 254.54x  |
-| Cython (mask for everything)               | 2.50s           | 351.27x  |
-| Cython (cleaning + small killer opt)       | 2.11s           | 416.20x  |
-| Cython (only test necessary killer)        | 0.09s           | 9757.66x |
+| Description                                | Time            | Speedup   |
+| ------------------------------------------ | --------------: | --------: |
+| Python                                     | 878.19s         | 1.00x     |
+| Cython                                     | 521.93s         | 1.68x     |
+| Cython (more typing)                       | 417.01s         | 2.10x     |
+| Cython (even more typing)                  | 373.33s         | 2.35x     |
+| C++ (straightforward translation)          | 23.79s          | 36.91x    |
+| Cython (fix all unnecessary conversions)   | 26.36s          | 33.32x    |
+| C++ (exit early from constraints check)    | 17.54s          | 50.06x    |
+| Cython (exit early from constraints check) | 18.74s          | 46.86x    |
+| Cython (fewer progress messages)           | 14.85s          | 59.13x    |
+| Cython (more efficient checking)           | 3.45s           | 254.54x   |
+| Cython (mask for everything)               | 2.50s           | 351.27x   |
+| Cython (cleaning + small killer opt)       | 2.11s           | 416.20x   |
+| Cython (only test necessary killer)        | 0.09s           | 9757.66x  |
+| Cython (ctuple, void)                      | 0.08s           | 10977.38x |
 
 ## Instructions (for Python)
 
