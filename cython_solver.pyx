@@ -2,10 +2,9 @@
 # distutils: language=c++
 import cython
 from libcpp.vector cimport vector
-from libcpp.utility cimport pair
 
-ctypedef pair[int, int] Cell
-ctypedef pair[vector[int], int] KillerConstraint
+ctypedef (int, int) Cell
+ctypedef (vector[int], int) KillerConstraint
 
 
 cdef class Sudoku:
@@ -36,7 +35,7 @@ cdef class Sudoku:
 
     def add_little_killer_constraint(self, Cell start, int goal):
         cells = self.get_diag(start)
-        self.killer_contraints.push_back(KillerConstraint(cells, goal))
+        self.killer_contraints.push_back((cells, goal))
         for cell in cells:
             self.killer_lookup[cell].push_back(self.killer_contraints.size() - 1)
 
@@ -47,10 +46,8 @@ cdef class Sudoku:
     cdef bint check_additional_constraints(self, int row_idx, int col_idx):
         cdef vector[int] cells
         cdef int goal, idx
-        cdef KillerConstraint constraint
         for idx in self.killer_lookup[Sudoku.cell_idx(row_idx, col_idx)]:
-            constraint = self.killer_contraints[idx]
-            cells, goal = constraint.first, constraint.second
+            cells, goal = self.killer_contraints[idx]
             if not self.check_killer_constraint(cells, goal):
                 return False
         return True
@@ -70,19 +67,21 @@ cdef class Sudoku:
 
     def get_diag(self, Cell start):
         cdef Cell cur = start, direction
-        if start.first == 1:
-            direction = Cell(1, -1)
-        if start.first == 9:
-            direction = Cell(-1, 1)
-        if start.second == 1:
-            direction = Cell(1, 1)
-        if start.second == 9:
-            direction = Cell(-1, -1)
+        if start[0] == 1:
+            direction = (1, -1)
+        elif start[0] == 9:
+            direction = (-1, 1)
+        elif start[1] == 1:
+            direction = (1, 1)
+        elif start[1] == 9:
+            direction = (-1, -1)
+        else:
+            raise Exception(f"{start} is not a valid start cell for a little killer clue.")
 
         cells = []
         while min(cur) > 0 and max(cur) < 10:
-            cells.append(Sudoku.cell_idx(cur.first - 1, cur.second - 1))
-            cur = Cell(cur.first + direction.first, cur.second + direction.second)
+            cells.append(Sudoku.cell_idx(cur[0] - 1, cur[1] - 1))
+            cur = (cur[0] + direction[0], cur[1] + direction[1])
         return cells
 
     cdef solve_rec(self, int row, int col):
