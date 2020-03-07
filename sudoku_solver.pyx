@@ -15,7 +15,7 @@ cdef class Sudoku:
     cdef int[9] col_masks
     cdef int[9] block_masks
     cdef (vector[int])[81] killer_lookup
-    cdef object solutions
+    cdef list solutions
 
     def __init__(self, board):
         self.pos = [self.parse_board_char(c) for c in board if self.parse_board_char(c)]
