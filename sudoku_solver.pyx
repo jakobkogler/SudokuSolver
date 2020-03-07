@@ -141,9 +141,8 @@ cdef class Sudoku:
     def format_board(self, board):
         lines = []
         for row in chunks(board, 9):
-            line = [''.join('.123456789'[x] for x in chunk)
-                    for chunk in chunks(row, 3)]
-            lines.append('|'.join(line))
+            line = ''.join([str(number) for number in row])
+            lines.append('|'.join(chunks(line, 3)))
         rep =  '\n--- --- ---\n'.join(['\n'.join(chunk)
                                        for chunk in chunks(lines, 3)])
         return rep
