@@ -84,7 +84,7 @@ cdef class Sudoku:
             cur = (cur[0] + direction[0], cur[1] + direction[1])
         return cells
 
-    cdef solve_rec(self, int row, int col):
+    cdef void solve_rec(self, int row, int col):
         if col == 9:
             row += 1
             col = 0
