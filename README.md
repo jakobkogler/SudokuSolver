@@ -24,7 +24,7 @@ Here are the timing results for different versions of the program. See the Git h
 | Cython (only test necessary killer)        | 0.09s           | 9757.66x  |
 | Cython (ctuple, void)                      | 0.08s           | 10977.38x |
 
-## Instructions (for Python)
+## Build/Run Instructions
 
 The program requires the Cython library for compiling. It's best to setup a new virtual environment for that purpose:
 
@@ -46,16 +46,7 @@ Afterwards you can solve the Sudoku defined in `cython_main.py` with:
 python cython_main.py
 ```
 
-## Instructions (for C++)
-
-Compile and run the code with:
-
-```sh
-g++ -std=c++17 -O3 solver.cpp -march=native -o solver.out
-./solver.out
-```
-
-## Usage
+## Library Usage
 
 ```
 >>> from cython_solver import Sudoku
