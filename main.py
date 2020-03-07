@@ -1,4 +1,4 @@
-from cython_solver import Sudoku
+from sudoku_solver import Sudoku
 
 
 if __name__ == "__main__":

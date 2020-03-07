@@ -40,16 +40,16 @@ Then compile the Cython code:
 python setup.py build_ext --inplace
 ```
 
-Afterwards you can solve the Sudoku defined in `cython_main.py` with:
+Afterwards you can solve the Sudoku defined in `main.py` with:
 
 ```sh
-python cython_main.py
+python main.py
 ```
 
 ## Library Usage
 
 ```
->>> from cython_solver import Sudoku
+>>> from sudoku_solver import Sudoku
 >>> board = """.......5.
 ...            ..1..93..
 ...            9..7.1...
@@ -75,4 +75,4 @@ python cython_main.py
 512|934|786
 ```
 
-An additional example, using additional Even and Little Killer clues, is in the file `cython_main.py`.
+An additional example, using additional Even and Little Killer clues, is in the file `main.py`.

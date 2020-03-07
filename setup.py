@@ -1,6 +1,6 @@
 from distutils.core import setup
 from Cython.Build import cythonize
 
-setup(name='cython_solver',
-      ext_modules=cythonize("cython_solver.pyx",
+setup(name='sudoku_solver',
+      ext_modules=cythonize("sudoku_solver.pyx",
                             annotate=True))
