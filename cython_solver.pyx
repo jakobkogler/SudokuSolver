@@ -85,12 +85,16 @@ cdef class Sudoku:
         return cells
 
     cdef solve_rec(self, int row, int col):
+        if col == 9:
+            row += 1
+            col = 0
+
         if row == 9:  # solved
             self.solutions.append(list(self.fixed))
             return
 
         if self.fixed[Sudoku.cell_idx(row, col)]:
-            self.solve_rec(row+(col+1)//9, (col+1)%9)
+            self.solve_rec(row, col+1)
             return
 
         cdef int block = (row // 3) * 3 + (col // 3)
@@ -106,7 +110,7 @@ cdef class Sudoku:
                     self.row_masks[row] = row_mask | (1 << value)
                     self.col_masks[col] = col_mask | (1 << value)
                     self.block_masks[block] = block_mask | (1 << value)
-                    self.solve_rec(row+(col+1)//9, (col+1)%9)
+                    self.solve_rec(row, col+1)
 
         self.fixed[Sudoku.cell_idx(row, col)] = 0
         self.row_masks[row] = row_mask
