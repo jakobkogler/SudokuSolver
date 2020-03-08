@@ -59,6 +59,7 @@ python main.py
 ...            ...5.2..1
 ...            ..48..2..
 ...            .1......."""
+>>> sudoku = Sudoku(board)
 >>> sudoku.solve()
 1 solutions found:
 
