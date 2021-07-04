@@ -25,7 +25,7 @@ jobs:
       - name: Run mypy
         id: mypy
         run: |
-          echo "::set-output name=mypy-output::$(mypy)\n"
+          echo "::set-output name=mypy-output::$(mypy .)\n"
         continue-on-error: true
       - name: Comment mypy errors
         if: ${{ github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
