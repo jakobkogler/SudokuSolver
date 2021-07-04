@@ -32,18 +32,17 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const plan = fs.readFileSync("mypy.log");
-            # body = `### ❌ Mypy Error
-            # <details><summary>Error Message</summary>
-            # <p>
+            const output = fs.readFileSync("mypy.log");
+            body = `### ❌ Mypy Error
+            <details><summary>Error Message</summary>
+            <p>
 
-            # \`\`\`\n
-            # >> mypy
-            # ${ process.env.MYPY_OUTPUT }
-            # \`\`\`
+            \`\`\`\n
+            >> mypy\n` + output + `\n
+            \`\`\`
 
-            # </p>
-            # </details>`;
+            </p>
+            </details>`;
 
             github.issues.createComment({
               issue_number: context.issue.number,
