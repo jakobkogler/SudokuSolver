@@ -30,6 +30,8 @@ jobs:
       - name: Comment mypy errors
         if: ${{ github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
         uses: actions/github-script@v4
+        env:
+          MYPY_OUTPUT: "${{ steps.mypy.outputs.stderr }}\n${{ steps.mypy.outputs.stdout }}"
         with:
           script: |
             body = `### ❌ Mypy Error
@@ -38,7 +40,7 @@ jobs:
 
             \`\`\`\n
             >> mypy
-            ${{ steps.mypy.outputs.stdout }}
+            ${{ envs.MYPY_OUTPUT }}
             \`\`\`
 
             </p>
