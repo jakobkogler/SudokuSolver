@@ -25,13 +25,16 @@ jobs:
       - name: Run mypy
         id: mypy
         run: |
-          mypy .
+          mypy . 2>&1 | tee mypy.log
+          result_code=${PIPESTATUS[0]}
+          echo "::set-output name=mypy-output::$(cat mypy.log)"
+          exit $result_code
         continue-on-error: true
       - name: Comment mypy errors
         if: ${{ github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
         uses: actions/github-script@v4
         env:
-          MYPY_OUTPUT: "${{ steps.mypy.outputs.stderr }}\n${{ steps.mypy.outputs.stdout }}"
+          MYPY_OUTPUT: "${{ steps.mypy.outputs.mypy-output }}"
         with:
           script: |
             body = `### ❌ Mypy Error
