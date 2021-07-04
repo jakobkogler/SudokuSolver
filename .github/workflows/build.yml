@@ -25,33 +25,29 @@ jobs:
       - name: Run mypy
         id: mypy
         run: |
-          mypy . 2>&1 | tee mypy.log
-          result_code=${PIPESTATUS[0]}
-          echo "::set-output name=mypy-output::$(cat mypy.log)"
-          exit $result_code
-        continue-on-error: true
+          mypy . 2>&1 > mypy.log
       - name: Comment mypy errors
-        if: ${{ github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
+        if: ${{ always() && github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
         uses: actions/github-script@v4
-        env:
-          MYPY_OUTPUT: "${{ steps.mypy.outputs.mypy-output }}"
         with:
           script: |
-            body = `### ❌ Mypy Error
-            <details><summary>Error Message</summary>
-            <p>
+            const fs = require('fs');
+            const plan = fs.readFileSync("mypy.log");
+            # body = `### ❌ Mypy Error
+            # <details><summary>Error Message</summary>
+            # <p>
 
-            \`\`\`\n
-            >> mypy
-            ${ process.env.MYPY_OUTPUT }
-            \`\`\`
+            # \`\`\`\n
+            # >> mypy
+            # ${ process.env.MYPY_OUTPUT }
+            # \`\`\`
 
-            </p>
-            </details>`;
+            # </p>
+            # </details>`;
 
             github.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: body
+              body: plan
             })
