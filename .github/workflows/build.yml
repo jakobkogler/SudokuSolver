@@ -12,12 +12,42 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-      - name: Install Cython
+      - name: Install Dependencies
         run: |
-          pip install Cython
+          pip install Cython mypy
       - name: Compile the code
         run: |
           python setup.py build_ext --inplace
       - name: Run tests
+        id: tests
         run: |
           python main.py
+      - name: Run mypy
+        id: mypy
+        run: |
+          set -o pipefail
+          mypy . | tee mypy.log
+      - name: Comment mypy errors
+        if: ${{ failure() && github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync("mypy.log");
+            body = `### ❌ Mypy Error
+            <details><summary>Error Message</summary>
+            <p>
+
+            \`\`\`\n
+            >> mypy\n` + output + `\n
+            \`\`\`
+
+            </p>
+            </details>`;
+
+            github.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
