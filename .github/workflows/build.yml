@@ -28,7 +28,7 @@ jobs:
           set -o pipefail
           mypy . | tee mypy.log
       - name: Comment mypy errors
-        if: ${{ always() && github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
+        if: ${{ failure() && github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
         uses: actions/github-script@v4
         with:
           script: |
