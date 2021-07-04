@@ -40,7 +40,7 @@ jobs:
 
             \`\`\`\n
             >> mypy
-            ${{ process.env.MYPY_OUTPUT }}
+            ${ process.env.MYPY_OUTPUT }
             \`\`\`
 
             </p>
