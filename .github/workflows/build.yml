@@ -25,24 +25,25 @@ jobs:
       - name: Run mypy
         id: mypy
         run: |
-          echo "::set-output name=mypy-output::$(mypy .)\n"
+          mypy .
         continue-on-error: true
       - name: Comment mypy errors
         if: ${{ github.event_name == 'pull_request' && steps.mypy.outcome == 'failure' }}
         uses: actions/github-script@v4
         with:
           script: |
-            body = `❌ Mypy Error
-              <details><summary>Error Message</summary>
-              <p>
+            body = `### ❌ Mypy Error
+            <details><summary>Error Message</summary>
+            <p>
 
-              \`\`\`
-              ${{ steps.mypy.outputs.mypy-output }}
-              \`\`\`
+            \`\`\`\n
+            >> mypy
+            ${{ steps.mypy.outputs.stdout }}
+            \`\`\`
 
-              </p>
-              </details>
-            `
+            </p>
+            </details>`;
+
             github.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
